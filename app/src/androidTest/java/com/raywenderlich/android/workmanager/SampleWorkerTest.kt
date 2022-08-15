@@ -37,7 +37,16 @@
 package com.raywenderlich.android.workmanager
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.test.espresso.matcher.ViewMatchers.assertThat
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.testing.WorkManagerTestInitHelper
+import androidx.work.workDataOf
+import com.raywenderlich.android.workmanager.workers.SampleWorker
+import org.hamcrest.core.Is.`is`
 import org.junit.Rule
+import org.junit.Test
+import java.util.concurrent.TimeUnit
 
 class SampleWorkerTest {
   @get:Rule
@@ -46,4 +55,26 @@ class SampleWorkerTest {
   @get:Rule
   var workerManagerTestRule = WorkManagerTestRule()
 
+  @Test
+  fun testWorkerInitialDelay() {
+    val inputData = workDataOf("Worker" to "sampleWorker")
+    // 1
+    val request = OneTimeWorkRequestBuilder<SampleWorker>()
+      .setInitialDelay(10, TimeUnit.SECONDS)
+      .setInputData(inputData)
+      .build()
+
+    // 2
+    val testDriver = WorkManagerTestInitHelper
+      .getTestDriver(workerManagerTestRule.targetContext)
+    val workManager = workerManagerTestRule.workManager
+    // 3
+    workManager.enqueue(request).result.get()
+    // 4
+    testDriver?.setInitialDelayMet(request.id)
+    // 5
+    val workInfo = workManager.getWorkInfoById(request.id).get()
+    // 6
+    assertThat(workInfo.state, `is`(WorkInfo.State.SUCCEEDED))
+  }
 }
