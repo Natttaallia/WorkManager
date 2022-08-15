@@ -109,6 +109,20 @@ class HomeActivity : AppCompatActivity() {
     observeWork(imageWorker.id)
   }
 
+  private fun createDelayedWorkRequest() {
+    val imageWorker = OneTimeWorkRequestBuilder<ImageDownloadWorker>()
+      .setConstraints(constraints)
+      .setInitialDelay(30, TimeUnit.SECONDS)
+      .addTag("imageWork")
+      .build()
+    workManager.enqueueUniqueWork(
+      "delayedImageDownload",
+      ExistingWorkPolicy.KEEP,
+      imageWorker
+    )
+    observeWork(imageWorker.id)
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     setTheme(R.style.AppTheme)
     super.onCreate(savedInstanceState)
@@ -122,7 +136,8 @@ class HomeActivity : AppCompatActivity() {
       showLottieAnimation()
       activityHomeBinding.downloadLayout.visibility = View.GONE
 //      createOneTimeWorkRequest()
-      createPeriodicWorkRequest()
+//      createPeriodicWorkRequest()
+      createDelayedWorkRequest()
     }
   }
 
