@@ -61,6 +61,25 @@ class HomeActivity : AppCompatActivity() {
     .setRequiresBatteryNotLow(true)
     .build()
 
+  private fun queryWorkInfo() {
+    // 1
+    val workQuery = WorkQuery.Builder
+      .fromTags(listOf("imageWork"))
+      .addStates(listOf(WorkInfo.State.SUCCEEDED))
+      .addUniqueWorkNames(
+        listOf("oneTimeImageDownload", "delayedImageDownload",
+          "periodicImageDownload")
+      )
+      .build()
+    // 2
+    workManager.getWorkInfosLiveData(workQuery).observe(this) { workInfos->
+      activityHomeBinding.tvWorkInfo.visibility = View.VISIBLE
+      activityHomeBinding.tvWorkInfo.text =
+        resources.getQuantityString(R.plurals.text_work_desc, workInfos.size,
+          workInfos.size)
+    }
+  }
+
   private fun observeWork(id: UUID) {
     // 1
     workManager.getWorkInfoByIdLiveData(id)
@@ -138,6 +157,9 @@ class HomeActivity : AppCompatActivity() {
 //      createOneTimeWorkRequest()
 //      createPeriodicWorkRequest()
       createDelayedWorkRequest()
+    }
+    activityHomeBinding.btnQueryWork.setOnClickListener {
+      queryWorkInfo()
     }
   }
 
