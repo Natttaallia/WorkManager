@@ -38,11 +38,8 @@ package com.raywenderlich.android.workmanager
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkInfo
+import androidx.work.*
 import androidx.work.testing.WorkManagerTestInitHelper
-import androidx.work.workDataOf
 import com.raywenderlich.android.workmanager.workers.SampleWorker
 import org.hamcrest.core.Is.`is`
 import org.junit.Rule
@@ -99,5 +96,31 @@ class SampleWorkerTest {
 
     // 6
     assertThat(workInfo.state, `is`(WorkInfo.State.ENQUEUED))
+  }
+
+  @Test
+  fun testAllConstraintsAreMet() {
+    val inputData = workDataOf("Worker" to "sampleWorker")
+    // 1
+    val constraints = Constraints.Builder()
+      .setRequiredNetworkType(NetworkType.CONNECTED)
+      .setRequiresBatteryNotLow(true)
+      .build()
+    // 2
+    val request = OneTimeWorkRequestBuilder<SampleWorker>()
+      .setConstraints(constraints)
+      .setInputData(inputData)
+      .build()
+    val workManager = WorkManager
+      .getInstance(workerManagerTestRule.targetContext)
+    // 3
+    workManager.enqueue(request).result.get()
+    // 4
+    WorkManagerTestInitHelper.getTestDriver(workerManagerTestRule.targetContext)
+      ?.setAllConstraintsMet(request.id)
+    // 5
+    val workInfo = workManager.getWorkInfoById(request.id).get()
+    // 6
+    assertThat(workInfo.state, `is`(WorkInfo.State.SUCCEEDED))
   }
 }
