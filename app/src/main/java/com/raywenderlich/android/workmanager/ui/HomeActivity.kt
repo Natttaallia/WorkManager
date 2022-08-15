@@ -40,11 +40,37 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.work.*
 import com.raywenderlich.android.workmanager.R
 import com.raywenderlich.android.workmanager.databinding.ActivityHomeBinding
+import com.raywenderlich.android.workmanager.workers.ImageDownloadWorker
 
 class HomeActivity : AppCompatActivity() {
   private lateinit var activityHomeBinding: ActivityHomeBinding
+
+  private val workManager by lazy {
+    WorkManager.getInstance(applicationContext)
+  }
+
+  private val constraints = Constraints.Builder()
+    .setRequiredNetworkType(NetworkType.CONNECTED)
+    .setRequiresStorageNotLow(true)
+    .setRequiresBatteryNotLow(true)
+    .build()
+
+  private fun createOneTimeWorkRequest() {
+    // 1
+    val imageWorker = OneTimeWorkRequestBuilder<ImageDownloadWorker>()
+      .setConstraints(constraints)
+      .addTag("imageWork")
+      .build()
+    // 2
+    workManager.enqueueUniqueWork(
+      "oneTimeImageDownload",
+      ExistingWorkPolicy.KEEP,
+      imageWorker
+    )
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     setTheme(R.style.AppTheme)
@@ -54,6 +80,12 @@ class HomeActivity : AppCompatActivity() {
     activityHomeBinding.tvWorkInfo.visibility = View.GONE
 
     requestStoragePermissions()
+
+    activityHomeBinding.btnImageDownload.setOnClickListener {
+      showLottieAnimation()
+      activityHomeBinding.downloadLayout.visibility = View.GONE
+      createOneTimeWorkRequest()
+    }
   }
 
   private fun requestStoragePermissions() {
