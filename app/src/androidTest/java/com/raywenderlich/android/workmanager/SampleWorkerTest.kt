@@ -39,6 +39,7 @@ package com.raywenderlich.android.workmanager
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.espresso.matcher.ViewMatchers.assertThat
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.testing.WorkManagerTestInitHelper
 import androidx.work.workDataOf
@@ -76,5 +77,27 @@ class SampleWorkerTest {
     val workInfo = workManager.getWorkInfoById(request.id).get()
     // 6
     assertThat(workInfo.state, `is`(WorkInfo.State.SUCCEEDED))
+  }
+
+  @Test
+  fun testPeriodicSampleWorker() {
+    val inputData = workDataOf("Worker" to "sampleWorker")
+    // 1
+    val request = PeriodicWorkRequestBuilder<SampleWorker>(15, TimeUnit.MINUTES)
+      .setInputData(inputData)
+      .build()
+    // 2
+    val testDriver = WorkManagerTestInitHelper
+      .getTestDriver(workerManagerTestRule.targetContext)
+    val workManager = workerManagerTestRule.workManager
+    // 3
+    workManager.enqueue(request).result.get()
+    // 4
+    testDriver?.setPeriodDelayMet(request.id)
+    // 5
+    val workInfo = workManager.getWorkInfoById(request.id).get()
+
+    // 6
+    assertThat(workInfo.state, `is`(WorkInfo.State.ENQUEUED))
   }
 }
