@@ -40,10 +40,12 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.work.*
 import com.raywenderlich.android.workmanager.R
 import com.raywenderlich.android.workmanager.databinding.ActivityHomeBinding
 import com.raywenderlich.android.workmanager.workers.ImageDownloadWorker
+import java.util.*
 
 class HomeActivity : AppCompatActivity() {
   private lateinit var activityHomeBinding: ActivityHomeBinding
@@ -58,6 +60,23 @@ class HomeActivity : AppCompatActivity() {
     .setRequiresBatteryNotLow(true)
     .build()
 
+  private fun observeWork(id: UUID) {
+    // 1
+    workManager.getWorkInfoByIdLiveData(id)
+      .observe(this) { info ->
+        // 2
+        if (info != null && info.state.isFinished) {
+          hideLottieAnimation()
+          activityHomeBinding.downloadLayout.visibility = View.VISIBLE
+          // 3
+          val uriResult = info.outputData.getString("IMAGE_URI")
+          if (uriResult != null) {
+            showDownloadedImage(uriResult.toUri())
+          }
+        }
+      }
+  }
+
   private fun createOneTimeWorkRequest() {
     // 1
     val imageWorker = OneTimeWorkRequestBuilder<ImageDownloadWorker>()
@@ -70,6 +89,7 @@ class HomeActivity : AppCompatActivity() {
       ExistingWorkPolicy.KEEP,
       imageWorker
     )
+    observeWork(imageWorker.id)
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
