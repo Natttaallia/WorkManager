@@ -46,6 +46,7 @@ import com.raywenderlich.android.workmanager.R
 import com.raywenderlich.android.workmanager.databinding.ActivityHomeBinding
 import com.raywenderlich.android.workmanager.workers.ImageDownloadWorker
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
   private lateinit var activityHomeBinding: ActivityHomeBinding
@@ -92,6 +93,22 @@ class HomeActivity : AppCompatActivity() {
     observeWork(imageWorker.id)
   }
 
+  private fun createPeriodicWorkRequest() {
+    // 1
+    val imageWorker = PeriodicWorkRequestBuilder<ImageDownloadWorker>(
+      15, TimeUnit.MINUTES)
+      .setConstraints(constraints)
+      .addTag("imageWork")
+      .build()
+    // 2
+    workManager.enqueueUniquePeriodicWork(
+      "periodicImageDownload",
+      ExistingPeriodicWorkPolicy.KEEP,
+      imageWorker
+    )
+    observeWork(imageWorker.id)
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     setTheme(R.style.AppTheme)
     super.onCreate(savedInstanceState)
@@ -104,7 +121,8 @@ class HomeActivity : AppCompatActivity() {
     activityHomeBinding.btnImageDownload.setOnClickListener {
       showLottieAnimation()
       activityHomeBinding.downloadLayout.visibility = View.GONE
-      createOneTimeWorkRequest()
+//      createOneTimeWorkRequest()
+      createPeriodicWorkRequest()
     }
   }
 
